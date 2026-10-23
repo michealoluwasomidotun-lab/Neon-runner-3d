@@ -8,13 +8,14 @@
     "build": "node -e \"console.log('Web assets are in www')\"",
     "android:add": "cap add android",
     "android:sync": "cap sync android",
-    "android:build": "cd android && gradlew assembleDebug"
+    "android:build": "cd android && ./gradlew assembleDebug"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.3",
     "@capacitor/core": "^7.4.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.3"
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "^5.8.3"
   }
 }
