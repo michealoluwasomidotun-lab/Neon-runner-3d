@@ -1,0 +1,61 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Runner 3D</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #080b18;
+      color: #00f5ff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    main { padding: 40px 16px; }
+    canvas {
+      display: block;
+      width: 100%;
+      max-width: 360px;
+      height: 400px;
+      margin: 20px auto;
+      background: #11182c;
+      border: 2px solid #00f5ff;
+      border-radius: 12px;
+      touch-action: none;
+    }
+    button {
+      padding: 14px 28px;
+      background: #00f5ff;
+      color: #080b18;
+      border: 0;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>NEON RUNNER 3D</h1>
+    <p>Welcome to your neon running game!</p>
+    <canvas id="game" width="360" height="400"></canvas>
+    <button onclick="startGame()">START GAME</button>
+    <p id="status">Ready to run?</p>
+  </main>
+  <script>
+    function startGame() {
+      document.getElementById("status").textContent =
+        "Game started! More gameplay features coming soon.";
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#00f5ff";
+      ctx.font = "bold 24px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("RUNNER START!", 180, 200);
+    }
+  </script>
+</body>
+</html>
