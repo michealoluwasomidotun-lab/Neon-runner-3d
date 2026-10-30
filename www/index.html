@@ -72,20 +72,40 @@ function roadX(lane,z){
 function roadY(z){return H*.24+(H*.82)*z*z}
 function robot(o){
  let x=roadX(o.lane,o.z),y=roadY(o.z),s=10+o.z*48;
- ctx.save();ctx.translate(x,y);
- ctx.shadowBlur=14;ctx.shadowColor=o.kind?'#ff2be8':'#00f6ff';
- // legs
- ctx.strokeStyle=o.kind?'#ff45df':'#00f6ff';ctx.lineWidth=Math.max(2,s*.12);
- line(-s*.22,-s*.15,-s*.28,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
- line(s*.22,-s*.15,s*.28,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
- // body and head
+ let t=performance.now()*.006;
+ let bob=Math.sin(t)*s*.06;
+ ctx.save();
+ ctx.translate(x,y+bob);
+ ctx.shadowBlur=20;
+ ctx.shadowColor=o.kind?'#ff2be8':'#00f6ff';
+
+ // Animated robot legs
+ ctx.strokeStyle=o.kind?'#ff45df':'#00f6ff';
+ ctx.lineWidth=Math.max(2,s*.12);
+ line(-s*.22,-s*.15,-s*.28+Math.sin(t)*s*.08,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
+ line(s*.22,-s*.15,s*.28-Math.sin(t)*s*.08,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
+
+ // Robot body
  ctx.fillStyle=o.kind?'#56164f':'#123f58';
- ctx.strokeStyle=o.kind?'#ff43e8':'#4bffff';ctx.lineWidth=2;
- ctx.fillRect(-s*.34,-s*.62,s*.68,s*.5);ctx.strokeRect(-s*.34,-s*.62,s*.68,s*.5);
- ctx.fillRect(-s*.27,-s*.98,s*.54,s*.3);ctx.strokeRect(-s*.27,-s*.98,s*.54,s*.3);
- ctx.fillStyle='#fff';ctx.fillRect(-s*.17,-s*.88,s*.1,s*.06);ctx.fillRect(s*.07,-s*.88,s*.1,s*.06);
+ ctx.strokeStyle=o.kind?'#ff43e8':'#4bffff';
+ ctx.lineWidth=2;
+ ctx.fillRect(-s*.34,-s*.62,s*.68,s*.5);
+ ctx.strokeRect(-s*.34,-s*.62,s*.68,s*.5);
+
+ // Glowing head
+ ctx.fillRect(-s*.27,-s*.98,s*.54,s*.3);
+ ctx.strokeRect(-s*.27,-s*.98,s*.54,s*.3);
+
+ // Animated eyes
+ ctx.fillStyle='#fff';
+ let eye=Math.sin(t*2)>-.8?s*.1:0;
+ ctx.fillRect(-s*.17,-s*.88,s*.1,eye);
+ ctx.fillRect(s*.07,-s*.88,s*.1,eye);
+
+ // Arms
  line(-s*.48,-s*.5,-s*.34,-s*.3,ctx.strokeStyle,Math.max(2,s*.1));
  line(s*.48,-s*.5,s*.34,-s*.3,ctx.strokeStyle,Math.max(2,s*.1));
+
  ctx.restore();
 }
 function drawPlayer(){
