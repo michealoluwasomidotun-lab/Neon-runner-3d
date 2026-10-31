@@ -7,16 +7,37 @@
 <title>Neon Runner 3D</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#030612;color:#e7ffff;font-family:Arial,sans-serif;overflow:hidden;touch-action:none}
-h1{text-align:center;font-size:23px;letter-spacing:3px;color:#00f6ff;text-shadow:0 0 15px #00cfff;margin:10px}
-#hud{display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px;padding:8px;font-size:13px;font-weight:bold;color:#72ffff}
+body{
+ margin:0;background:#030612;color:#e7ffff;
+ font-family:Arial,sans-serif;overflow:hidden;touch-action:none
+}
+h1{
+ text-align:center;font-size:23px;letter-spacing:3px;
+ color:#00f6ff;text-shadow:0 0 15px #00cfff;margin:10px
+}
+#hud{
+ display:flex;justify-content:space-around;flex-wrap:wrap;
+ gap:8px;padding:8px;font-size:13px;
+ font-weight:bold;color:#72ffff
+}
 canvas{display:block;width:100%;height:72vh;touch-action:none}
 #hint{text-align:center;color:#9cb9d7;font-size:12px;padding:6px}
-#start{position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);background:#06142cee;border:2px solid #00f6ff;border-radius:14px;padding:20px;text-align:center;width:82%;box-shadow:0 0 25px #00bfff;z-index:5}
-button{background:#092b45;color:#8fffff;border:1px solid #00f6ff;border-radius:10px;padding:13px 20px;font-weight:bold}
+#start{
+ position:absolute;top:48%;left:50%;
+ transform:translate(-50%,-50%);
+ background:#06142cee;border:2px solid #00f6ff;
+ border-radius:14px;padding:20px;text-align:center;
+ width:82%;box-shadow:0 0 25px #00bfff;z-index:5
+}
+button{
+ background:#092b45;color:#8fffff;
+ border:1px solid #00f6ff;border-radius:10px;
+ padding:13px 20px;font-weight:bold
+}
 </style>
 </head>
 <body>
+
 <h1>NEON RUNNER 3D</h1>
 
 <div id="hud">
@@ -26,7 +47,11 @@ button{background:#092b45;color:#8fffff;border:1px solid #00f6ff;border-radius:1
 </div>
 
 <canvas id="game"></canvas>
-<div id="hint">SWIPE LEFT / RIGHT TO MOVE • UP TO JUMP • DOWN TO SLIDE</div>
+
+<div id="hint">
+SWIPE LEFT / RIGHT TO MOVE • UP TO JUMP • DOWN TO SLIDE
+</div>
+
 <div id="start">
 <h2>CYBER HIGHWAY</h2>
 <p>Dodge robots and collect energy coins!</p>
@@ -44,37 +69,55 @@ const start=document.getElementById('start');
 
 let W,H,player=0,score=0,lives=3,coins=0;
 let objects=[],coinItems=[],particles=[],stars=[];
-let running=false,jump=0,speed=.006;
+
+let running=false;
+let jump=0,slide=0,speed=.006;
 let last=0,spawn=0,coinSpawn=0;
 let audio=null;
 
 function resize(){
  const r=c.getBoundingClientRect();
  const d=Math.min(devicePixelRatio||1,2);
- W=r.width;H=r.height;
- c.width=W*d;c.height=H*d;
+
+ W=r.width;
+ H=r.height;
+
+ c.width=W*d;
+ c.height=H*d;
+
  ctx.setTransform(d,0,0,d,0,0);
+
  stars=Array.from({length:75},()=>({
   x:Math.random()*W,
   y:Math.random()*H*.6,
-  s:Math.random()*2+0.5
+  s:Math.random()*2+.5
  }));
 }
+
 addEventListener('resize',resize);
 resize();
 
 function sound(freq=500,duration=.1,type='sine'){
  try{
-  if(!audio)audio=new(window.AudioContext||window.webkitAudioContext)();
+  if(!audio)
+   audio=new(window.AudioContext||window.webkitAudioContext)();
+
   if(audio.state==='suspended')audio.resume();
+
   const osc=audio.createOscillator();
   const gain=audio.createGain();
+
   osc.type=type;
   osc.frequency.setValueAtTime(freq,audio.currentTime);
+
   gain.gain.setValueAtTime(.08,audio.currentTime);
-  gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+  gain.gain.exponentialRampToValueAtTime(
+   .001,audio.currentTime+duration
+  );
+
   osc.connect(gain);
   gain.connect(audio.destination);
+
   osc.start();
   osc.stop(audio.currentTime+duration);
  }catch(e){}
@@ -90,10 +133,14 @@ function line(x1,y1,x2,y2,color,width=1){
 }
 
 function road(){
- const horizon=H*.24,bottom=H*1.08,cx=W/2;
+ const horizon=H*.24;
+ const bottom=H*1.08;
+ const cx=W/2;
+
  let g=ctx.createLinearGradient(0,horizon,0,H);
  g.addColorStop(0,'#101b42');
  g.addColorStop(1,'#02040c');
+
  ctx.fillStyle=g;
  ctx.fillRect(0,0,W,H);
 
@@ -106,8 +153,10 @@ function road(){
  for(let i=0;i<15;i++){
   let x=i*W/14;
   let bh=25+(i*37%85);
+
   ctx.fillStyle='#08152b';
   ctx.fillRect(x,horizon-bh,Math.max(8,W/18),bh);
+
   for(let y=horizon-bh+8;y<horizon-4;y+=12){
    ctx.fillStyle='#087d9b';
    ctx.fillRect(x+4,y,3,3);
@@ -129,28 +178,36 @@ function road(){
 
  // Moving neon road lights
  let phase=(performance.now()*.00035)%1;
+
  for(let i=0;i<16;i++){
   let t=(i/16+phase)%1;
   let y=horizon+(bottom-horizon)*t*t;
   let spread=W*.12+W*.38*t;
   let pulse=2+t*3;
+
   line(cx-spread,y,cx-spread+W*.035,y,'#00eaff',pulse);
   line(cx+spread,y,cx+spread-W*.035,y,'#ff32e9',pulse);
  }
 
  // Lane dividers
  for(let lane of [-1/3,1/3]){
-  line(cx+lane*W*.24,horizon,cx+lane*W*.8,bottom,'#00b9ff88',2);
+  line(
+   cx+lane*W*.24,horizon,
+   cx+lane*W*.8,bottom,
+   '#00b9ff88',2
+  );
  }
 }
 
 function roadX(lane,z){
  return W/2+lane*(W*.12+W*.38*z);
 }
+
 function roadY(z){
  return H*.24+H*.82*z*z;
 }
 
+// Robot obstacles
 function robot(o){
  let x=roadX(o.lane,o.z);
  let y=roadY(o.z);
@@ -160,13 +217,14 @@ function robot(o){
 
  ctx.save();
  ctx.translate(x,y+bob);
+
  ctx.shadowBlur=20;
  ctx.shadowColor=o.kind?'#ff2be8':'#00f6ff';
 
  ctx.strokeStyle=o.kind?'#ff45df':'#00f6ff';
  ctx.lineWidth=Math.max(2,s*.12);
 
- // Animated legs
+ // Legs
  line(-s*.22,-s*.15,-s*.28+Math.sin(t)*s*.08,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
  line(s*.22,-s*.15,s*.28-Math.sin(t)*s*.08,s*.3,ctx.strokeStyle,Math.max(2,s*.12));
 
@@ -174,6 +232,7 @@ function robot(o){
  ctx.fillStyle=o.kind?'#56164f':'#123f58';
  ctx.strokeStyle=o.kind?'#ff43e8':'#4bffff';
  ctx.lineWidth=2;
+
  ctx.fillRect(-s*.34,-s*.62,s*.68,s*.5);
  ctx.strokeRect(-s*.34,-s*.62,s*.68,s*.5);
 
@@ -184,82 +243,236 @@ function robot(o){
  // Eyes
  ctx.fillStyle='#fff';
  let eye=Math.sin(t*2)>-.8?s*.1:0;
+
  ctx.fillRect(-s*.17,-s*.88,s*.1,eye);
  ctx.fillRect(s*.07,-s*.88,s*.1,eye);
 
  // Arms
  line(-s*.48,-s*.5,-s*.34,-s*.3,ctx.strokeStyle,Math.max(2,s*.1));
  line(s*.48,-s*.5,s*.34,-s*.3,ctx.strokeStyle,Math.max(2,s*.1));
+
  ctx.restore();
 }
 
+// CYBER NINJA PLAYER
 function drawPlayer(){
+
  let x=roadX(player,.93);
- let s=Math.min(W*.085,35);
+
+ let s=Math.min(W*.105,43);
  let t=performance.now()*.012;
 
- let crouch=slide>0?slide:0;
- let airborne=jump>0?jump:0;
+ let crouch=slide;
+ let airborne=jump;
+
  let run=Math.sin(t)*s*.12;
+ let legRun=Math.cos(t)*s*.18;
 
  let y=H*.91-airborne*55;
 
  ctx.save();
  ctx.translate(x,y);
- ctx.shadowBlur=20;
- ctx.shadowColor='#00f6ff';
 
- // Sliding crouch
+ // Character shadow
+ ctx.save();
+ ctx.globalAlpha=Math.max(.15,1-airborne*.7);
+ ctx.fillStyle='#00eaff';
+ ctx.shadowBlur=15;
+ ctx.shadowColor='#00eaff';
+ ctx.beginPath();
+ ctx.ellipse(0,s*.04,s*.38,s*.09,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.restore();
+
+ // Jumping and sliding transforms
  ctx.scale(1,1-crouch*.45);
- ctx.translate(0,crouch*s*.35);
+ ctx.translate(0,crouch*s*.38);
 
- // Legs
- ctx.strokeStyle='#00dfff';
- ctx.lineWidth=s*.18;
+ ctx.shadowBlur=18;
+ ctx.shadowColor='#00dfff';
+
+ // Back energy pack
+ ctx.fillStyle='#101c35';
+ ctx.strokeStyle='#00eaff';
+ ctx.lineWidth=2;
+
+ ctx.beginPath();
+ ctx.roundRect(-s*.38,-s*1.2,s*.76,s*.35,5);
+ ctx.fill();
+ ctx.stroke();
+
+ ctx.fillStyle='#00f6ff';
+ ctx.fillRect(-s*.31,-s*1.12,s*.62,s*.07);
+
+ // Legs and knee armour
  ctx.lineCap='round';
 
- line(-s*.15,-s*.35,-s*.23+run,-s*.05,'#00dfff',s*.17);
- line(s*.15,-s*.35,s*.23-run,-s*.05,'#00dfff',s*.17);
+ line(
+  -s*.13,-s*.46,
+  -s*.22+legRun,-s*.12,
+  '#101d35',s*.22
+ );
+
+ line(
+  s*.13,-s*.46,
+  s*.22-legRun,-s*.12,
+  '#101d35',s*.22
+ );
+
+ // Leg armour highlights
+ line(-s*.22,-s*.38,-s*.22+legRun,-s*.12,'#00dfff',s*.055);
+ line(s*.22,-s*.38,s*.22-legRun,-s*.12,'#00dfff',s*.055);
 
  // Boots
- ctx.fillStyle='#092b45';
- ctx.fillRect(-s*.34,-s*.08,s*.3,s*.15);
- ctx.fillRect(s*.05,-s*.08,s*.3,s*.15);
-
- // Torso
- ctx.fillStyle='#10516c';
- ctx.strokeStyle='#7affff';
+ ctx.fillStyle='#071326';
+ ctx.strokeStyle='#00eaff';
  ctx.lineWidth=2;
+
  ctx.beginPath();
- ctx.roundRect(-s*.3,-s*1.05,s*.6,s*.75,6);
+ ctx.roundRect(-s*.37,-s*.16,s*.32,s*.18,4);
  ctx.fill();
  ctx.stroke();
 
- // Chest light
+ ctx.beginPath();
+ ctx.roundRect(s*.05,-s*.16,s*.32,s*.18,4);
+ ctx.fill();
+ ctx.stroke();
+
+ // Boot lights
+ ctx.fillStyle='#00f6ff';
+ ctx.fillRect(-s*.32,-s*.09,s*.2,s*.035);
+ ctx.fillRect(s*.12,-s*.09,s*.2,s*.035);
+
+ // Torso armour
+ ctx.fillStyle='#101d35';
+ ctx.strokeStyle='#4df7ff';
+ ctx.lineWidth=2;
+
+ ctx.beginPath();
+ ctx.moveTo(-s*.29,-s*.55);
+ ctx.lineTo(-s*.36,-s*1.12);
+ ctx.lineTo(-s*.23,-s*1.25);
+ ctx.lineTo(s*.23,-s*1.25);
+ ctx.lineTo(s*.36,-s*1.12);
+ ctx.lineTo(s*.29,-s*.55);
+ ctx.closePath();
+ ctx.fill();
+ ctx.stroke();
+
+ // Chest centre plate
+ ctx.fillStyle='#183451';
+ ctx.beginPath();
+ ctx.moveTo(-s*.19,-s*1.12);
+ ctx.lineTo(s*.19,-s*1.12);
+ ctx.lineTo(s*.14,-s*.68);
+ ctx.lineTo(-s*.14,-s*.68);
+ ctx.closePath();
+ ctx.fill();
+
+ // Energy core
  ctx.fillStyle='#baffff';
- ctx.shadowBlur=12;
- ctx.fillRect(-s*.18,-s*.9,s*.36,s*.12);
+ ctx.shadowBlur=18;
+ ctx.shadowColor='#00f6ff';
 
- // Arms
- line(-s*.28,-s*.9,-s*.48-run,-s*.48,'#00eaff',s*.13);
- line(s*.28,-s*.9,s*.48+run,-s*.48,'#00eaff',s*.13);
-
- // Helmet
- ctx.fillStyle='#123e59';
- ctx.strokeStyle='#7affff';
  ctx.beginPath();
- ctx.roundRect(-s*.29,-s*1.42,s*.58,s*.4,8);
+ ctx.moveTo(0,-s*1.04);
+ ctx.lineTo(s*.1,-s*.9);
+ ctx.lineTo(0,-s*.77);
+ ctx.lineTo(-s*.1,-s*.9);
+ ctx.closePath();
+ ctx.fill();
+
+ // Shoulder armour
+ ctx.fillStyle='#142b49';
+ ctx.strokeStyle='#00eaff';
+
+ ctx.beginPath();
+ ctx.roundRect(-s*.45,-s*1.18,s*.2,s*.24,5);
  ctx.fill();
  ctx.stroke();
+
+ ctx.beginPath();
+ ctx.roundRect(s*.25,-s*1.18,s*.2,s*.24,5);
+ ctx.fill();
+ ctx.stroke();
+
+ // Animated arms
+ line(
+  -s*.31,-s*1.08,
+  -s*.43-run,-s*.67,
+  '#101d35',s*.18
+ );
+
+ line(
+  s*.31,-s*1.08,
+  s*.43+run,-s*.67,
+  '#101d35',s*.18
+ );
+
+ // Arm neon strips
+ line(-s*.4,-s*.93,-s*.43-run,-s*.7,'#00eaff',s*.045);
+ line(s*.4,-s*.93,s*.43+run,-s*.7,'#00eaff',s*.045);
+
+ // Gloves
+ ctx.fillStyle='#071326';
+ ctx.strokeStyle='#00eaff';
+
+ ctx.beginPath();
+ ctx.arc(-s*.43-run,-s*.65,s*.1,0,Math.PI*2);
+ ctx.fill();
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.arc(s*.43+run,-s*.65,s*.1,0,Math.PI*2);
+ ctx.fill();
+ ctx.stroke();
+
+ // Neck guard
+ ctx.fillStyle='#0a172c';
+ ctx.fillRect(-s*.13,-s*1.36,s*.26,s*.16);
+
+ // Helmet shell
+ ctx.fillStyle='#101d35';
+ ctx.strokeStyle='#6fffff';
+ ctx.lineWidth=2;
+
+ ctx.beginPath();
+ ctx.moveTo(-s*.3,-s*1.35);
+ ctx.lineTo(-s*.27,-s*1.62);
+ ctx.lineTo(-s*.15,-s*1.75);
+ ctx.lineTo(s*.15,-s*1.75);
+ ctx.lineTo(s*.27,-s*1.62);
+ ctx.lineTo(s*.3,-s*1.35);
+ ctx.closePath();
+ ctx.fill();
+ ctx.stroke();
+
+ // Helmet side panels
+ ctx.fillStyle='#173958';
+ ctx.fillRect(-s*.34,-s*1.55,s*.08,s*.22);
+ ctx.fillRect(s*.26,-s*1.55,s*.08,s*.22);
 
  // Glowing visor
  ctx.fillStyle='#00f6ff';
- ctx.shadowBlur=15;
- ctx.fillRect(-s*.21,-s*1.29,s*.42,s*.09);
+ ctx.shadowBlur=22;
+ ctx.shadowColor='#00f6ff';
+
+ ctx.beginPath();
+ ctx.roundRect(-s*.23,-s*1.58,s*.46,s*.12,5);
+ ctx.fill();
+
+ // Visor shine
+ ctx.fillStyle='#eaffff';
+ ctx.fillRect(-s*.14,-s*1.55,s*.1,s*.025);
+
+ // Helmet top energy strip
+ ctx.fillStyle='#00dfff';
+ ctx.fillRect(-s*.07,-s*1.72,s*.14,s*.035);
 
  ctx.restore();
 }
 
+// Energy coins
 function drawCoins(){
  coinItems.forEach(o=>{
   let x=roadX(o.lane,o.z);
@@ -273,20 +486,25 @@ function drawCoins(){
   ctx.shadowBlur=20;
   ctx.shadowColor='#ffd700';
   ctx.fillStyle='#ffd700';
+
   ctx.beginPath();
   ctx.arc(0,0,s+pulse,0,Math.PI*2);
   ctx.fill();
+
   ctx.strokeStyle='#fff5a0';
   ctx.lineWidth=2;
   ctx.stroke();
+
   ctx.restore();
  });
 }
 
+// Particle effects
 function burst(x,y,color,count=14){
  for(let i=0;i<count;i++){
   let a=Math.random()*Math.PI*2;
   let v=1+Math.random()*3;
+
   particles.push({
    x,y,
    vx:Math.cos(a)*v,
@@ -303,32 +521,51 @@ function drawParticles(){
   ctx.fillStyle=p.color;
   ctx.shadowBlur=12;
   ctx.shadowColor=p.color;
+
   ctx.beginPath();
   ctx.arc(p.x,p.y,3*p.life,0,Math.PI*2);
   ctx.fill();
  });
+
  ctx.globalAlpha=1;
 }
 
 function draw(){
  road();
+
  objects.sort((a,b)=>a.z-b.z).forEach(robot);
+
  drawCoins();
  drawPlayer();
  drawParticles();
 }
 
+// Reset game
 function reset(){
- player=0;score=0;lives=3;coins=0;
- objects=[];coinItems=[];particles=[];
- speed=.006;spawn=0;coinSpawn=0;jump=0;slide=0;
+ player=0;
+ score=0;
+ lives=3;
+ coins=0;
+
+ objects=[];
+ coinItems=[];
+ particles=[];
+
+ speed=.006;
+ spawn=0;
+ coinSpawn=0;
+ jump=0;
+ slide=0;
+
  scoreEl.textContent=score;
  livesEl.textContent=lives;
  coinsEl.textContent=coins;
 }
 
+// Main game loop
 function frame(now){
  if(!running)return;
+
  const dt=Math.min(now-last||16,40);
  last=now;
 
@@ -343,36 +580,48 @@ function frame(now){
    kind:Math.random()<.35?1:0,
    phase:Math.random()*6
   });
+
   spawn=0;
  }
 
- // Spawn energy coins
+ // Spawn coins
  if(coinSpawn>950){
   coinItems.push({
    lane:Math.floor(Math.random()*3)-1,
    z:.06
   });
+
   coinSpawn=0;
  }
 
- // Move robots and coins
+ // Move obstacles and coins
  objects.forEach(o=>o.z+=speed*dt*.30);
  coinItems.forEach(o=>o.z+=speed*dt*.65);
 
- // Robot collision
+ // Robot collisions
  objects=objects.filter(o=>{
-  if(o.z>.83&&o.z<.99&&o.lane===player&&jump<.25&&slide<.25){
+  if(
+   o.z>.83&&
+   o.z<.99&&
+   o.lane===player&&
+   jump<.25&&
+   slide<.25
+  ){
    lives--;
    livesEl.textContent=lives;
+
    burst(roadX(o.lane,o.z),roadY(o.z),'#ff35e9',22);
    sound(120,.25,'sawtooth');
+
    return false;
   }
+
   if(o.z>=1.1){
    score+=10;
    scoreEl.textContent=score;
    return false;
   }
+
   return o.z<1.1;
  });
 
@@ -381,12 +630,16 @@ function frame(now){
   if(o.z>.84&&o.z<.99&&o.lane===player){
    coins++;
    score+=25;
+
    coinsEl.textContent=coins;
    scoreEl.textContent=score;
+
    burst(roadX(o.lane,o.z),roadY(o.z),'#ffd700',18);
    sound(850,.12,'sine');
+
    return false;
   }
+
   return o.z<1.1;
  });
 
@@ -396,36 +649,48 @@ function frame(now){
   p.y+=p.vy;
   p.life-=dt*.002;
  });
+
  particles=particles.filter(p=>p.life>0);
 
+ // Jump and slide animations
  jump=Math.max(0,jump-dt*.003);
  slide=Math.max(0,slide-dt*.0025);
+
+ // Gradually increase game speed
  speed=Math.min(.012,speed+dt*.00000015);
 
  draw();
 
  if(lives<=0){
   running=false;
+
   start.style.display='block';
   start.querySelector('h2').textContent='RUN OVER';
   start.querySelector('p').textContent='Score: '+score+' | Coins: '+coins;
   start.querySelector('button').textContent='PLAY AGAIN';
+
   return;
  }
 
  requestAnimationFrame(frame);
 }
 
+// Start game
 document.getElementById('play').onclick=()=>{
  reset();
+
  start.style.display='none';
  running=true;
  last=performance.now();
+
  sound(600,.15);
+
  requestAnimationFrame(frame);
 };
 
+// Swipe controls
 let sx=0,sy=0;
+
 c.addEventListener('touchstart',e=>{
  sx=e.changedTouches[0].clientX;
  sy=e.changedTouches[0].clientY;
@@ -433,6 +698,7 @@ c.addEventListener('touchstart',e=>{
 
 c.addEventListener('touchend',e=>{
  if(!running)return;
+
  let dx=e.changedTouches[0].clientX-sx;
  let dy=e.changedTouches[0].clientY-sy;
 
@@ -440,18 +706,36 @@ c.addEventListener('touchend',e=>{
   player=Math.max(-1,Math.min(1,player+(dx>0?1:-1)));
  }else if(dy<-25){
   jump=1;
+  slide=0;
   sound(650,.1);
  }else if(dy>25){
   slide=1;
+  jump=0;
   sound(300,.12);
  }
 },{passive:true});
 
+// Keyboard controls
 addEventListener('keydown',e=>{
- if(e.key==='ArrowLeft')player=Math.max(-1,player-1);
- if(e.key==='ArrowRight')player=Math.min(1,player+1);
- if(e.key==='ArrowUp'){jump=1;sound(650,.1);}
- if(e.key==='ArrowDown'){slide=1;sound(300,.12);}
+ if(e.key==='ArrowLeft'){
+  player=Math.max(-1,player-1);
+ }
+
+ if(e.key==='ArrowRight'){
+  player=Math.min(1,player+1);
+ }
+
+ if(e.key==='ArrowUp'){
+  jump=1;
+  slide=0;
+  sound(650,.1);
+ }
+
+ if(e.key==='ArrowDown'){
+  slide=1;
+  jump=0;
+  sound(300,.12);
+ }
 });
 
 draw();
